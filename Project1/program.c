@@ -1158,22 +1158,22 @@ int main(void){
 
 
 
-	int max_A = maxA("test.txt");
-	int min_A = minA("test.txt");
-	int sum_A = sumA("test.txt");
+	int max_A = maxA("test2.txt");
+	int min_A = minA("test2.txt");
+	int sum_A = sumA("test2.txt");
 
-	int max_B = maxB("test.txt");
-	int min_B = minB("test.txt");
-	int sum_B = sumB("test.txt");
+	int max_B = maxB("test2.txt");
+	int min_B = minB("test2.txt");
+	int sum_B = sumB("test2.txt");
 
-	int max_C = maxC("test.txt");
-	int min_C = minC("test.txt");
-	int sum_C = sumC("test.txt");
+	int max_C = maxC("test2.txt");
+	int min_C = minC("test2.txt");
+	int sum_C = sumC("test2.txt");
 
 
-	int max_D = maxD("test.txt");
-	int min_D = minD("test.txt");
-	int sum_D = sumD("test.txt");
+	int max_D = maxD("test2.txt");
+	int min_D = minD("test2.txt");
+	int sum_D = sumD("test2.txt");
 
 	return 0;
 }
