@@ -13,6 +13,10 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <semaphore.h>
+#include <pthread.h>
+#include <mach/mach.h>
+#include <mach/task.h>
+#include <mach/semaphore.h>
 
 #define SEM_NAME "/sem"
 
@@ -924,7 +928,7 @@ int sumC(char * file){
 
 int maxD(char * file){
 
-	sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
+	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
 
 	const int SIZE = 4096;
 	const char * name = "MEM";
@@ -975,37 +979,78 @@ int maxD(char * file){
 	fclose(ptr_file);
 	// each child can create at most 2 children, so the structure grows like a binary tree
 
+	i = i-1;
 
+	// printf("There are %d elements\n", i);
+
+	int iterations = 6;
+	int num = i / iterations;
+
+	// printf("num is %d\n", num);
+
+	int rem = i % num;
+	if (rem != 0){
+		iterations++;
+	}
+
+	// printf("%d iterations\n", iterations);
+	// printf("%d remaining\n", rem);
+
+	int j;
+	int last = 0;
 	int index = 0;
+
+	sprintf(ptr2, "%d", array[0]);
 
 	while (1){
 
 		int status;
 		// int current = atoi((char*)ptr);
 
-		if (2*index + 1 > i - 2){
+		if (2*index + 1 > iterations ){
 			// printf("%d\n", index);
-			if (index > i - 2){
+			if (index >= iterations){
 				// extraneous node, do nothing
 				exit(0);
 			}
-			//printf("I am a node, my index is %d and my value is %d\n", index, array[index]);
-			sem_wait(sem);
-			if (atoi((char*)ptr2) < array[index]){
-				sprintf(ptr2, "%d", array[index]);
+
+			int * subArray;
+			int subMax;
+			last = index * num;
+
+			if (index == iterations - 1 && rem != 0){
+				subArray = (int*)malloc(rem*sizeof(int));
+				memcpy(&subArray[0], &array[last], rem * sizeof(int));
+				subMax = max(subArray, rem);
+				// printf("I go from %d to %d, which is %d to %d\n", last, last + rem - 1, array[last], array[last + rem - 1]);
+				// printf("MAX HERE IS %d\n", subMax);
 			}
-			sem_post(sem);
-			if (index == i - 2){
+			else {
+				subArray = (int*)malloc(num*sizeof(int));
+				memcpy(&subArray[0], &array[last], num * sizeof(int));
+				subMax = max(subArray, num);
+				// printf("I go from %d to %d, which is %d to %d\n", last, last + num - 1, array[last], array[last+num - 1]);
+				// printf("MAX HERE IS %d\n", subMax);
+			}
+
+			//sem_wait(sem);
+			int current = atoi((char*)ptr2);
+			// printf("------ %d or %d -----\n", current, subMax);
+
+			if (current < subMax){
+				sprintf(ptr2, "%d", subMax);
+			}
+
+			//sem_post(sem);
+			if (index == iterations - 1){
 				sleep(1);
 				int max = atoi((char*)ptr2);
 				printf("The maximum is %d\n", max);
-				sem_close(sem);
+				//sem_close(sem);
 				return max;
 			}
 
 			exit(0);
-
-
 		}
 		// sprintf(ptr, "%d", current + 2);
 
@@ -1037,12 +1082,35 @@ int maxD(char * file){
 				// printf("%d\n", index);
 				// parent process, aka current node
 				// do some work, and then break
-				//printf("I am a node, my index is %d and my value is %d\n", index, array[index]);
-				sem_wait(sem);
-				if (atoi((char*)ptr2) < array[index]){
-					sprintf(ptr2, "%d", array[index]);
+
+				int * subArray;
+				int subMax;
+				last = index * num;
+
+				if (index == iterations - 1 && rem != 0){
+					subArray = (int*)malloc(rem*sizeof(int));
+					memcpy(&subArray[0], &array[last], rem * sizeof(int));
+					subMax = max(subArray, rem);
+					// printf("I go from %d to %d, which is %d to %d\n", last, last + rem - 1, array[last], array[last + rem - 1]);
+					// printf("MAX HERE IS %d\n", subMax);
 				}
-				sem_post(sem);
+				else {
+					subArray = (int*)malloc(num*sizeof(int));
+					memcpy(&subArray[0], &array[last], num * sizeof(int));
+					subMax = max(subArray, num);
+					// printf("I go from %d to %d, which is %d to %d\n", last, last + num - 1, array[last], array[last+num - 1]);
+					// printf("MAX HERE IS %d\n", subMax);
+				}
+
+				//sem_wait(sem);
+
+				int current = atoi((char*)ptr2);
+				// printf("------ %d or %d -----\n", current, subMax);
+
+				if (current < subMax){
+					sprintf(ptr2, "%d", subMax);
+				}
+
 				if (index == 0){
 					int k;
 					for (k = 1; k < i - 1; k++){
@@ -1064,8 +1132,410 @@ int maxD(char * file){
 
 }
 
-int minD(char * file){}
-int sumD(char * file){}
+int minD(char * file){
+
+	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
+
+	const int SIZE = 4096;
+	const char * name = "MEM";
+	const char * name2 = "MEM2";
+	int shm_fd, shm_fd2;
+	void * ptr;
+	void * ptr2;
+
+	shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
+	shm_fd2 = shm_open(name2, O_CREAT | O_RDWR, 0666);
+
+	ftruncate(shm_fd, SIZE);
+	ftruncate(shm_fd2, SIZE);
+
+	ptr = mmap(0, SIZE, PROT_WRITE, MAP_SHARED, shm_fd, 0);
+	ptr2 = mmap(0, SIZE, PROT_WRITE, MAP_SHARED, shm_fd2, 0);
+
+	FILE * ptr_file;
+	char line[1000];
+
+	ptr_file = fopen(file, "r");
+
+	if (!ptr_file){
+		return -1;
+	}
+
+	int * array = (int*)malloc(sizeof(int));
+	int i = 1;
+
+
+	while(fgets(line, 1000, ptr_file)){
+
+		if (line[strlen(line) - 1] != '\n'){
+			// im stupid
+			//line[strlen(line)] == '\0';
+		}
+		else {
+			line[strlen(line)-1] = '\0';
+		}
+
+		int value = atoi(line);
+
+		array = (int*)realloc(array, i*sizeof(int));
+		array[i-1] = value;
+		i++;
+	}
+
+	fclose(ptr_file);
+	// each child can create at most 2 children, so the structure grows like a binary tree
+
+	i = i-1;
+
+	// printf("There are %d elements\n", i);
+
+	int iterations = 6;
+	int num = i / iterations;
+
+	// printf("num is %d\n", num);
+
+	int rem = i % num;
+	if (rem != 0){
+		iterations++;
+	}
+
+	// printf("%d iterations\n", iterations);
+	// printf("%d remaining\n", rem);
+
+	int j;
+	int last = 0;
+	int index = 0;
+
+	sprintf(ptr2, "%d", array[0]);
+
+	while (1){
+
+		int status;
+		// int current = atoi((char*)ptr);
+
+		if (2*index + 1 > iterations ){
+			// printf("%d\n", index);
+			if (index >= iterations){
+				// extraneous node, do nothing
+				exit(0);
+			}
+
+			int * subArray;
+			int subMin;
+			last = index * num;
+
+			if (index == iterations - 1 && rem != 0){
+				subArray = (int*)malloc(rem*sizeof(int));
+				memcpy(&subArray[0], &array[last], rem * sizeof(int));
+				subMin = min(subArray, rem);
+				// printf("I go from %d to %d, which is %d to %d\n", last, last + rem - 1, array[last], array[last + rem - 1]);
+				// printf("MAX HERE IS %d\n", subMax);
+			}
+			else {
+				subArray = (int*)malloc(num*sizeof(int));
+				memcpy(&subArray[0], &array[last], num * sizeof(int));
+				subMin = min(subArray, num);
+				// printf("I go from %d to %d, which is %d to %d\n", last, last + num - 1, array[last], array[last+num - 1]);
+				// printf("MAX HERE IS %d\n", subMax);
+			}
+
+			//sem_wait(sem);
+			int current = atoi((char*)ptr2);
+			// printf("------ %d or %d -----\n", current, subMax);
+
+			if (current > subMin){
+				sprintf(ptr2, "%d", subMin);
+			}
+
+			//sem_post(sem);
+			if (index == iterations - 1){
+				sleep(1);
+				int min = atoi((char*)ptr2);
+				printf("The minimum is %d\n", min);
+				//sem_close(sem);
+				return min;
+			}
+
+			exit(0);
+		}
+		// sprintf(ptr, "%d", current + 2);
+
+		pid_t pid2;
+		pid_t pid1;
+
+		pid1 = fork();
+
+		if (pid1 < 0){
+			printf("Forking error...\n");
+
+		}
+		else if (pid1 == 0){
+			// child, aka left node
+			index = 2*index + 1;
+		}
+		else {  // parent process
+			pid2 = fork();
+
+			if (pid2 < 0){
+				printf("Forking error...\n");
+			}
+			else if (pid2 == 0){
+				// child, aka right node
+				index = 2*index + 2;
+			}
+			else {
+
+				// printf("%d\n", index);
+				// parent process, aka current node
+				// do some work, and then break
+
+				int * subArray;
+				int subMin;
+				last = index * num;
+
+				if (index == iterations - 1 && rem != 0){
+					subArray = (int*)malloc(rem*sizeof(int));
+					memcpy(&subArray[0], &array[last], rem * sizeof(int));
+					subMin = min(subArray, rem);
+					// printf("I go from %d to %d, which is %d to %d\n", last, last + rem - 1, array[last], array[last + rem - 1]);
+					// printf("MAX HERE IS %d\n", subMax);
+				}
+				else {
+					subArray = (int*)malloc(num*sizeof(int));
+					memcpy(&subArray[0], &array[last], num * sizeof(int));
+					subMin = min(subArray, num);
+					// printf("I go from %d to %d, which is %d to %d\n", last, last + num - 1, array[last], array[last+num - 1]);
+					// printf("MAX HERE IS %d\n", subMax);
+				}
+
+				//sem_wait(sem);
+
+				int current = atoi((char*)ptr2);
+				// printf("------ %d or %d -----\n", current, subMax);
+
+				if (current > subMin){
+					sprintf(ptr2, "%d", subMin);
+				}
+
+				if (index == 0){
+					int k;
+					for (k = 1; k < i - 1; k++){
+						wait(NULL);
+						// printf("Reaped %d\n", k);
+					}
+					break;
+				}
+				exit(0);
+			}
+		}
+	}
+
+	if (index == 0){
+		exit(0);
+	}
+	exit(-1);
+}
+
+int sumD(char * file){
+
+	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
+
+	const int SIZE = 4096;
+	const char * name = "MEM";
+	const char * name2 = "MEM2";
+	int shm_fd, shm_fd2;
+
+	void * ptr2;
+
+	shm_fd2 = shm_open(name2, O_CREAT | O_RDWR, 0666);
+
+	ftruncate(shm_fd2, SIZE);
+
+	ptr2 = mmap(0, SIZE, PROT_WRITE, MAP_SHARED, shm_fd2, 0);
+
+	FILE * ptr_file;
+	char line[1000];
+
+	ptr_file = fopen(file, "r");
+
+	if (!ptr_file){
+		return -1;
+	}
+
+	int * array = (int*)malloc(sizeof(int));
+	int i = 1;
+
+
+	while(fgets(line, 1000, ptr_file)){
+
+		if (line[strlen(line) - 1] != '\n'){
+			// im stupid
+			//line[strlen(line)] == '\0';
+		}
+		else {
+			line[strlen(line)-1] = '\0';
+		}
+
+		int value = atoi(line);
+
+		array = (int*)realloc(array, i*sizeof(int));
+		array[i-1] = value;
+		i++;
+	}
+
+	fclose(ptr_file);
+	// each child can create at most 2 children, so the structure grows like a binary tree
+
+	i = i-1;
+
+	// printf("There are %d elements\n", i);
+
+	int iterations = 6;
+	int num = i / iterations;
+
+	// printf("num is %d\n", num);
+
+	int rem = i % num;
+	if (rem != 0){
+		iterations++;
+	}
+
+	// printf("%d iterations\n", iterations);
+	// printf("%d remaining\n", rem);
+
+	int j;
+	int last = 0;
+	int index = 0;
+
+	sprintf(ptr2, "%d", 0);
+
+	while (1){
+
+		int status;
+		// int current = atoi((char*)ptr);
+
+		if (2*index + 1 > iterations ){
+			// printf("%d\n", index);
+			if (index >= iterations){
+				// extraneous node, do nothing
+				exit(0);
+			}
+
+			int * subArray;
+			int subSum;
+			last = index * num;
+
+			if (index == iterations - 1 && rem != 0){
+				subArray = (int*)malloc(rem*sizeof(int));
+				memcpy(&subArray[0], &array[last], rem * sizeof(int));
+				subSum = sum(subArray, rem);
+				// printf("I go from %d to %d, which is %d to %d\n", last, last + rem - 1, array[last], array[last + rem - 1]);
+				// printf("MAX HERE IS %d\n", subMax);
+			}
+			else {
+				subArray = (int*)malloc(num*sizeof(int));
+				memcpy(&subArray[0], &array[last], num * sizeof(int));
+				subSum = sum(subArray, num);
+				// printf("I go from %d to %d, which is %d to %d\n", last, last + num - 1, array[last], array[last+num - 1]);
+				// printf("MAX HERE IS %d\n", subMax);
+			}
+
+			// sem_wait(sem);
+			int current = atoi((char*)ptr2);
+			// printf("------ %d or %d -----\n", current, subMax);
+
+			sprintf(ptr2, "%d", subSum + current);
+
+			// sem_post(sem);
+
+			if (index == iterations - 1){
+				sleep(1);
+				/*
+				int k;
+				for (k = 1; k < iterations; k++){
+					wait(NULL);
+					printf("Oi\n");
+					// printf("Reaped %d\n", k);
+				}
+				*/
+				int sum = atoi((char*)ptr2);
+				printf("The sum is %d\n", sum);
+				// sem_close(sem);
+				return sum;
+			}
+
+			exit(0);
+		}
+		// sprintf(ptr, "%d", current + 2);
+
+		pid_t pid2;
+		pid_t pid1;
+
+		pid1 = fork();
+
+		if (pid1 < 0){
+			printf("Forking error...\n");
+
+		}
+		else if (pid1 == 0){
+			// child, aka left node
+			index = 2*index + 1;
+		}
+		else {  // parent process
+			pid2 = fork();
+
+			if (pid2 < 0){
+				printf("Forking error...\n");
+			}
+			else if (pid2 == 0){
+				// child, aka right node
+				index = 2*index + 2;
+			}
+			else {
+
+				// printf("%d\n", index);
+				// parent process, aka current node
+				// do some work, and then break
+
+				int * subArray;
+				int subSum;
+				last = index * num;
+
+				if (index == iterations - 1 && rem != 0){
+					subArray = (int*)malloc(rem*sizeof(int));
+					memcpy(&subArray[0], &array[last], rem * sizeof(int));
+					subSum = sum(subArray, rem);
+					// printf("I go from %d to %d, which is %d to %d\n", last, last + rem - 1, array[last], array[last + rem - 1]);
+					// printf("MAX HERE IS %d\n", subMax);
+				}
+				else {
+					subArray = (int*)malloc(num*sizeof(int));
+					memcpy(&subArray[0], &array[last], num * sizeof(int));
+					subSum = sum(subArray, num);
+					// printf("I go from %d to %d, which is %d to %d\n", last, last + num - 1, array[last], array[last+num - 1]);
+					// printf("MAX HERE IS %d\n", subMax);
+				}
+
+				// sem_wait(sem);
+
+				int current = atoi((char*)ptr2);
+				// printf("------ %d or %d -----\n", current, subMax);
+
+				sprintf(ptr2, "%d", subSum + current);
+
+				// sem_post(sem);
+
+
+				exit(0);
+			}
+		}
+	}
+
+	if (index == 0){
+		exit(0);
+	}
+	exit(-1);
+}
 
 int main(void){
 
@@ -1073,22 +1543,22 @@ int main(void){
 
 
 
-	int max_A = maxA("test2.txt");
-	int min_A = minA("test2.txt");
-	int sum_A = sumA("test2.txt");
+	int max_A = maxA("test3.txt");
+	int min_A = minA("test3.txt");
+	int sum_A = sumA("test3.txt");
 
-	int max_B = maxB("test2.txt");
-	int min_B = minB("test2.txt");
-	int sum_B = sumB("test2.txt");
+	int max_B = maxB("test3.txt");
+	int min_B = minB("test3.txt");
+	int sum_B = sumB("test3.txt");
 
-	int max_C = maxC("test2.txt");
-	int min_C = minC("test2.txt");
-	int sum_C = sumC("test2.txt");
+	int max_C = maxC("test3.txt");
+	int min_C = minC("test3.txt");
+	int sum_C = sumC("test3.txt");
 
 
-	int max_D = maxD("test2.txt");
-	int min_D = minD("test2.txt");
-	int sum_D = sumD("test2.txt");
+	int max_D = maxD("test3.txt");
+	int min_D = minD("test3.txt");
+	int sum_D = sumD("test3.txt");
 
 	return 0;
 
