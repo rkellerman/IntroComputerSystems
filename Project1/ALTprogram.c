@@ -4,7 +4,7 @@
  *  Created on: Feb 21, 2017
  *      Author: RyanMini
  */
-
+#include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -1667,14 +1667,38 @@ int D(char * file){
 
 int main(void){
 
+	struct timeval t0, t1, t2, t3, t4;
+	time_t curtime;
+
+	gettimeofday(&t0, 0);
 
 	A("test3.txt");
 
+	gettimeofday(&t1, 0);
+
 	B("test3.txt");
+
+	gettimeofday(&t2, 0);
 
 	C("test3.txt");
 
+	gettimeofday(&t3, 0);
+
 	D("test3.txt");
+
+	gettimeofday(&t4, 0);
+
+	long elapsedA = ((t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec)/1000;
+	long elapsedB = ((t2.tv_sec-t1.tv_sec)*1000000 + t2.tv_usec-t1.tv_usec)/1000;
+	long elapsedC = ((t3.tv_sec-t2.tv_sec)*1000000 + t3.tv_usec-t2.tv_usec)/1000;
+	long elapsedD = ((t4.tv_sec-t3.tv_sec)*1000000 + t4.tv_usec-t3.tv_usec)/1000 - 3000;
+
+	printf("A took %d milliseconds\n", elapsedA);
+	printf("B took %d milliseconds\n", elapsedB);
+	printf("C took %d milliseconds\n", elapsedC);
+	printf("D took %d milliseconds\n", elapsedD);
+
+
 
 	return 0;
 
