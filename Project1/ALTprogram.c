@@ -14,9 +14,6 @@
 #include <sys/mman.h>
 #include <semaphore.h>
 #include <pthread.h>
-#include <mach/mach.h>
-#include <mach/task.h>
-#include <mach/semaphore.h>
 
 #define SEM_NAME "/sem"
 
@@ -57,7 +54,7 @@ int sum(int * array, int size){
 
 }
 
-int maxA(char * file){
+int maxA(char * file, FILE * output){
 
 
 
@@ -106,7 +103,8 @@ int maxA(char * file){
 	return max;
 }
 
-int sumA(char * file){
+
+int sumA(char * file, FILE * output){
 
 	FILE * ptr_file;
 	char line[1000];
@@ -151,7 +149,8 @@ int sumA(char * file){
 	return sum;
 }
 
-int minA(char * file){
+
+int minA(char * file, FILE * output){
 
 	FILE * ptr_file;
 	char line[1000];
@@ -198,7 +197,8 @@ int minA(char * file){
 	return min;
 }
 
-int maxB(char * file){
+
+int maxB(char * file, char * buffer){
 
 	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
 
@@ -274,13 +274,13 @@ int maxB(char * file){
 			exit(-1);
 		}
 		else if (pid == 0){  // child process
-			//printf("I am child number %i, my pid is %d, my parent is %d\n", j+1, getpid(), getppid());
+			sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 			//printf("I go from %d to %d\n", last, last + num);
 
 			int * subArray;
 			int subMax;
 
-			if (j == iterations - 1 && rem != 0){
+			if ((j == iterations - 1) && (rem != 0)){
 				subArray = (int*)malloc(rem*sizeof(int));
 				memcpy(&subArray[0], &array[last], rem * sizeof(int));
 				subMax = max(subArray, rem);
@@ -307,8 +307,7 @@ int maxB(char * file){
 			// sem_post(sem);
 		}
 		else { // parent process
-			waitpid(pid, &status, NULL);
-			//printf("Reaped...\n");
+			sleep(1);
 			exit(0);
 		}
 	}
@@ -319,7 +318,7 @@ int maxB(char * file){
 	return max;
 }
 
-int minB(char * file){
+int minB(char * file, char * buffer){
 
 
 	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
@@ -391,11 +390,14 @@ int minB(char * file){
 		int status;
 		pid_t pid = fork();
 
+
+
 		if (pid < 0){
 			printf("Error forking\n");
 			exit(-1);
 		}
 		else if (pid == 0){  // child process
+			sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 			//printf("I am child number %i, my pid is %d, my parent is %d\n", j+1, getpid(), getppid());
 			//printf("I go from %d to %d\n", last, last + num);
 
@@ -429,8 +431,7 @@ int minB(char * file){
 			// sem_post(sem);
 		}
 		else { // parent process
-			waitpid(pid, &status, NULL);
-			//printf("Reaped...\n");
+			sleep(1);
 			exit(0);
 		}
 	}
@@ -441,7 +442,7 @@ int minB(char * file){
 	return min;
 }
 
-int sumB(char * file){
+int sumB(char * file, char * buffer){
 
 	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
 
@@ -512,11 +513,16 @@ int sumB(char * file){
 		int status;
 		pid_t pid = fork();
 
+
+
+
 		if (pid < 0){
 			printf("Error forking\n");
 			exit(-1);
 		}
 		else if (pid == 0){  // child process
+
+			sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 			//printf("I am child number %i, my pid is %d, my parent is %d\n", j+1, getpid(), getppid());
 			//printf("I go from %d to %d\n", last, last + num);
 
@@ -546,8 +552,7 @@ int sumB(char * file){
 			// sem_post(sem);
 		}
 		else { // parent process
-			waitpid(pid, &status, NULL);
-			//printf("Reaped...\n");
+			sleep(1);
 			exit(0);
 		}
 	}
@@ -558,7 +563,7 @@ int sumB(char * file){
 	return sum;
 }
 
-int maxC(char * file){
+int maxC(char * file, char * buffer){
 
 	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
 
@@ -635,7 +640,8 @@ int maxC(char * file){
 		}
 		else if (pid == 0){  // child process
 
-
+			sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
+			//printf("Hi, my PID is %d, and my parent PID is %d\n", getpid(), getppid());
 			int * subArray;
 			int subMax;
 
@@ -670,7 +676,7 @@ int maxC(char * file){
 		}
 	}
 
-	for (j = 0; j < i-1; j++){
+	for (j = 0; j < iterations; j++){
 		wait(NULL);
 	}
 
@@ -682,7 +688,7 @@ int maxC(char * file){
 	return max;
 }
 
-int minC(char * file){
+int minC(char * file, char * buffer){
 
 	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
 
@@ -759,7 +765,7 @@ int minC(char * file){
 		}
 		else if (pid == 0){  // child process
 
-
+			sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 			int * subArray;
 			int subMin;
 
@@ -806,7 +812,7 @@ int minC(char * file){
 	return min;
 }
 
-int sumC(char * file){
+int sumC(char * file, char * buffer){
 
 	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
 
@@ -883,7 +889,7 @@ int sumC(char * file){
 		}
 		else if (pid == 0){  // child process
 
-
+			sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 			int * subArray;
 			int subSum;
 
@@ -926,7 +932,7 @@ int sumC(char * file){
 	return sum;
 }
 
-int maxD(char * file){
+int maxD(char * file, char * buffer){
 
 	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
 
@@ -1011,8 +1017,10 @@ int maxD(char * file){
 			// printf("%d\n", index);
 			if (index >= iterations){
 				// extraneous node, do nothing
+				sleep(1);
 				exit(0);
 			}
+
 
 			int * subArray;
 			int subMax;
@@ -1049,7 +1057,7 @@ int maxD(char * file){
 				//sem_close(sem);
 				return max;
 			}
-
+			sleep(1);
 			exit(0);
 		}
 		// sprintf(ptr, "%d", current + 2);
@@ -1066,6 +1074,7 @@ int maxD(char * file){
 		else if (pid1 == 0){
 			// child, aka left node
 			index = 2*index + 1;
+			sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 		}
 		else {  // parent process
 			pid2 = fork();
@@ -1076,8 +1085,10 @@ int maxD(char * file){
 			else if (pid2 == 0){
 				// child, aka right node
 				index = 2*index + 2;
+				sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 			}
 			else {
+
 
 				// printf("%d\n", index);
 				// parent process, aka current node
@@ -1119,6 +1130,7 @@ int maxD(char * file){
 					}
 					break;
 				}
+				sleep(1);
 				exit(0);
 			}
 		}
@@ -1132,7 +1144,7 @@ int maxD(char * file){
 
 }
 
-int minD(char * file){
+int minD(char * file, char * buffer){
 
 	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
 
@@ -1217,6 +1229,7 @@ int minD(char * file){
 			// printf("%d\n", index);
 			if (index >= iterations){
 				// extraneous node, do nothing
+				sleep(1);
 				exit(0);
 			}
 
@@ -1255,7 +1268,7 @@ int minD(char * file){
 				//sem_close(sem);
 				return min;
 			}
-
+			sleep(1);
 			exit(0);
 		}
 		// sprintf(ptr, "%d", current + 2);
@@ -1272,6 +1285,7 @@ int minD(char * file){
 		else if (pid1 == 0){
 			// child, aka left node
 			index = 2*index + 1;
+			sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 		}
 		else {  // parent process
 			pid2 = fork();
@@ -1282,6 +1296,7 @@ int minD(char * file){
 			else if (pid2 == 0){
 				// child, aka right node
 				index = 2*index + 2;
+				sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 			}
 			else {
 
@@ -1325,6 +1340,7 @@ int minD(char * file){
 					}
 					break;
 				}
+				sleep(1);
 				exit(0);
 			}
 		}
@@ -1336,7 +1352,7 @@ int minD(char * file){
 	exit(-1);
 }
 
-int sumD(char * file){
+int sumD(char * file, char * buffer){
 
 	// sem_t * sem = sem_open(SEM_NAME, O_CREAT, 0644, 1);
 
@@ -1418,6 +1434,7 @@ int sumD(char * file){
 			// printf("%d\n", index);
 			if (index >= iterations){
 				// extraneous node, do nothing
+				sleep(1);
 				exit(0);
 			}
 
@@ -1457,13 +1474,13 @@ int sumD(char * file){
 					printf("Oi\n");
 					// printf("Reaped %d\n", k);
 				}
-				*/
+				 */
 				int sum = atoi((char*)ptr2);
 				printf("The sum is %d\n", sum);
 				// sem_close(sem);
 				return sum;
 			}
-
+			sleep(1);
 			exit(0);
 		}
 		// sprintf(ptr, "%d", current + 2);
@@ -1480,6 +1497,7 @@ int sumD(char * file){
 		else if (pid1 == 0){
 			// child, aka left node
 			index = 2*index + 1;
+			sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 		}
 		else {  // parent process
 			pid2 = fork();
@@ -1490,6 +1508,7 @@ int sumD(char * file){
 			else if (pid2 == 0){
 				// child, aka right node
 				index = 2*index + 2;
+				sprintf(buffer, "%sHi, my PID is %d, and my parent PID is %d\n", buffer, getpid(), getppid());
 			}
 			else {
 
@@ -1525,7 +1544,7 @@ int sumD(char * file){
 
 				// sem_post(sem);
 
-
+				sleep(1);
 				exit(0);
 			}
 		}
@@ -1537,28 +1556,125 @@ int sumD(char * file){
 	exit(-1);
 }
 
+int A(char * file){
+
+	FILE * output = fopen("resultA.txt", "w");
+
+
+	int max_A = maxA(file, output);
+	int min_A = minA(file, output);
+	int sum_A = sumA(file, output);
+
+	fprintf(output, "Max = %d\nMin = %d\nSum = %d\n", max_A, min_A, sum_A);
+	fclose(output);
+
+
+
+
+}
+
+int B(char * file){
+
+	FILE * output = fopen("resultB.txt", "w");
+	char buffer[10000];
+
+	sprintf(buffer, "");
+
+
+	int max_B = maxB(file, buffer);
+
+	sprintf(buffer, "%s\nMax = %d\n\n", buffer, max_B);
+
+	int min_B = minB(file, buffer);
+
+	sprintf(buffer, "%s\nMin = %d\n\n", buffer, min_B);
+
+	int sum_B = sumB(file, buffer);
+
+	sprintf(buffer, "%s\nSum = %d\n\n", buffer, sum_B);
+
+	fprintf(output, buffer);
+
+
+	fclose(output);
+
+
+
+
+}
+
+
+int C(char * file){
+
+	int shm_fd;
+	char * buffer;
+
+	shm_fd = shm_open("TEMP", O_CREAT | O_RDWR, 0666);
+	ftruncate(shm_fd, 10000);
+	buffer = mmap(0, 10000, PROT_WRITE, MAP_SHARED, shm_fd, 0);
+
+	FILE * output = fopen("resultC.txt", "w");
+
+	sprintf(buffer, "");
+
+	int max_C = maxC(file, buffer);
+
+	sprintf(buffer, "%s\nMax = %d\n\n", buffer, max_C);
+
+	int min_C = minC(file, buffer);
+
+	sprintf(buffer, "%s\nMin = %d\n\n", buffer, min_C);
+
+	int sum_C = sumC(file, buffer);
+
+	sprintf(buffer, "%s\nSum = %d\n\n", buffer, sum_C);
+
+	fprintf(output, buffer);
+
+	fclose(output);
+}
+
+int D(char * file){
+
+	int shm_fd;
+	char * buffer;
+
+	shm_fd = shm_open("TEMP", O_CREAT | O_RDWR, 0666);
+	ftruncate(shm_fd, 10000);
+	buffer = mmap(0, 10000, PROT_WRITE, MAP_SHARED, shm_fd, 0);
+
+	FILE * output = fopen("resultD.txt", "w");
+
+	sprintf(buffer, "");
+
+	int max_D = maxD(file, buffer);
+
+	sprintf(buffer, "%s\nMax = %d\n\n", buffer, max_D);
+
+	int min_D = minD(file, buffer);
+
+	sprintf(buffer, "%s\nMin = %d\n\n", buffer, min_D);
+
+	int sum_D = sumD(file, buffer);
+
+	sprintf(buffer, "%s\nSum = %d\n\n", buffer, sum_D);
+
+	fprintf(output, buffer);
+
+	fclose(output);
+
+}
+
 int main(void){
 
 
+	A("test3.txt");
 
+	B("test3.txt");
 
+	C("test3.txt");
 
-	int max_A = maxA("test3.txt");
-	int min_A = minA("test3.txt");
-	int sum_A = sumA("test3.txt");
-
-	int max_B = maxB("test3.txt");
-	int min_B = minB("test3.txt");
-	int sum_B = sumB("test3.txt");
-
-	int max_C = maxC("test3.txt");
-	int min_C = minC("test3.txt");
-	int sum_C = sumC("test3.txt");
-
-
-	int max_D = maxD("test3.txt");
-	int min_D = minD("test3.txt");
-	int sum_D = sumD("test3.txt");
+	D("test3.txt");
 
 	return 0;
 
